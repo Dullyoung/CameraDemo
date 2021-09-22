@@ -20,8 +20,23 @@
         <Button
             android:id="@+id/btn_take_pic"
             android:layout_width="wrap_content"
+            android:layout_marginStart="10dp"
             android:layout_height="wrap_content"
             android:text="拍照" />
+
+        <Button
+            android:id="@+id/btn_open_lighting"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_height="wrap_content"
+            android:text="闪光灯" />
+
+        <Button
+            android:id="@+id/btn_change"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_height="wrap_content"
+            android:text="切换前后" />
 
     </LinearLayout>
 

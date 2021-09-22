@@ -14,6 +14,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
@@ -41,20 +42,32 @@ public class CameraActivity extends BaseActivity<ActivityCameraBinding> {
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreview(cameraProvider);
+                bindPreview(cameraProvider, true);
+                setClick(mBinding.btnChange, () -> {
+                    cameraProvider.unbindAll();
+                    isUsingBack = !isUsingBack;
+                    bindPreview(cameraProvider, isUsingBack);
+                    mBinding.btnOpenLighting.setText("闪光灯");
+                    mBinding.btnOpenLighting.setClickable(isUsingBack);
+                });
             } catch (ExecutionException | InterruptedException e) {
                 Toast.makeText(this, "相机预览创建失败", Toast.LENGTH_SHORT).show();
             }
         }, ContextCompat.getMainExecutor(this));
+
     }
 
 
-    private void bindPreview(ProcessCameraProvider cameraProvider) {
+    private boolean isTorchUsing = false;
+    private boolean isUsingBack = true;
+
+    @SuppressLint("RestrictedApi")
+    private void bindPreview(ProcessCameraProvider cameraProvider, boolean useBack) {
         Preview preview = new Preview.Builder()
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .requireLensFacing(useBack ? CameraSelector.LENS_FACING_BACK : CameraSelector.LENS_FACING_FRONT)
                 .build();
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
@@ -66,6 +79,12 @@ public class CameraActivity extends BaseActivity<ActivityCameraBinding> {
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
 
         mCamera = cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, imageAnalysis, preview);
+
+        setClick(mBinding.btnOpenLighting, () -> {
+            isTorchUsing = !isTorchUsing;
+            mCamera.getCameraControl().enableTorch(isTorchUsing);
+            mBinding.btnOpenLighting.setText(isTorchUsing ? "灯开" : "灯关");
+        });
 
         setClick(mBinding.btnTakePic, () -> {
             File file = new File(getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath(),
@@ -106,5 +125,11 @@ public class CameraActivity extends BaseActivity<ActivityCameraBinding> {
     public void onBackPressed() {
         super.onBackPressed();
         setResult(RESULT_CANCELED);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mCamera.getCameraControl().enableTorch(false);
     }
 }
